@@ -1,0 +1,33 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 2em;
+    background-color: #f4f4f4;
+}
+
+.container {
+    background: #fff;
+    padding: 2em;
+    margin: auto;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    max-width: 500px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin-top: 1em;
+    cursor: pointer;
+}
+
+#current-command {
+    font-size: 2em;
+    color: #007BFF;
+    margin-top: 1em;
+}
+
+#status {
+    font-style: italic;
+    margin-top: 0.5em;
+}

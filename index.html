@@ -8,7 +8,9 @@
 <body>
     <div class="container">
         <h1>Voice-Controlled Directions</h1>
+        <button onclick="connectBLE()">Connect to ESP32</button>
         <button onclick="init()">Start Listening</button>
+        <div id="ble-status">BLE: Not connected</div>
         <div id="status">Model not started.</div>
         <div id="current-command">Waiting for command...</div>
     </div>
@@ -17,4 +19,5 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>

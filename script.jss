@@ -19,7 +19,7 @@ async function createModel() {
 
 async function init() {
     document.getElementById("status").innerText = "Loading model...";
-    const recognizer = await createModel();
+    recognizer = await createModel();
     const classLabels = recognizer.wordLabels();
 
     document.getElementById("status").innerText = "Listening...";

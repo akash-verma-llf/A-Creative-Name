@@ -7,8 +7,8 @@ let bleServer;
 let bleService;
 let bleCharacteristic;
 
-const SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';  // Custom UART service
-const CHARACTERISTIC_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; // Write
+const SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+const CHARACTERISTIC_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 
 async function connectBLE() {
     try {
@@ -30,9 +30,20 @@ async function connectBLE() {
 }
 
 async function sendCommandToESP32(command) {
+    const statusDiv = document.getElementById("send-status");
+
     if (bleCharacteristic) {
-        const encoder = new TextEncoder();
-        await bleCharacteristic.writeValue(encoder.encode(command));
+        try {
+            const encoder = new TextEncoder();
+            await bleCharacteristic.writeValue(encoder.encode(command));
+            console.log("Command sent to ESP32:", command);
+            statusDiv.innerText = `Command send status: "${command}" sent successfully`;
+        } catch (error) {
+            console.error("Failed to send command:", error);
+            statusDiv.innerText = "Command send status: Failed to send";
+        }
+    } else {
+        statusDiv.innerText = "Command send status: Not connected to ESP32";
     }
 }
 
@@ -73,7 +84,7 @@ async function init() {
         if (predictedClass !== lastPrediction && maxScore > 0.75) {
             lastPrediction = predictedClass;
             document.getElementById("current-command").innerText = predictedClass;
-            await sendCommandToESP32(predictedClass); // Send over BLE
+            await sendCommandToESP32(predictedClass);
         }
 
     }, {

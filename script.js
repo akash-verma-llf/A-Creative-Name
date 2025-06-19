@@ -2,48 +2,50 @@ const URL = "https://teachablemachine.withgoogle.com/models/G2FB34AGs/";
 let lastPrediction = "";
 let recognizer;
 
-let bleDevice;
-let bleServer;
-let bleService;
-let bleCharacteristic;
+let bleDevice = null;
+let bleCharacteristic = null;
 
 const SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const CHARACTERISTIC_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 
 async function connectBLE() {
+    console.log("Connecting to ESP32...");
+    const status = document.getElementById("ble-status");
     try {
-        document.getElementById("ble-status").innerText = "BLE: Connecting...";
         bleDevice = await navigator.bluetooth.requestDevice({
             filters: [{ namePrefix: "ESP32" }],
             optionalServices: [SERVICE_UUID]
         });
 
-        bleServer = await bleDevice.gatt.connect();
-        bleService = await bleServer.getPrimaryService(SERVICE_UUID);
-        bleCharacteristic = await bleService.getCharacteristic(CHARACTERISTIC_UUID);
+        const server = await bleDevice.gatt.connect();
+        const service = await server.getPrimaryService(SERVICE_UUID);
+        bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
 
-        document.getElementById("ble-status").innerText = "BLE: Connected to ESP32";
+        status.innerText = "BLE: Connected to ESP32";
+        console.log("BLE connected and characteristic ready.");
     } catch (error) {
-        console.error("BLE Connection failed", error);
-        document.getElementById("ble-status").innerText = "BLE: Connection failed";
+        console.error("BLE Connection error:", error);
+        status.innerText = "BLE: Connection failed";
     }
 }
 
 async function sendCommandToESP32(command) {
-    const statusDiv = document.getElementById("send-status");
+    const sendStatus = document.getElementById("send-status");
 
-    if (bleCharacteristic) {
-        try {
-            const encoder = new TextEncoder();
-            await bleCharacteristic.writeValue(encoder.encode(command));
-            console.log("Command sent to ESP32:", command);
-            statusDiv.innerText = `Command send status: "${command}" sent successfully`;
-        } catch (error) {
-            console.error("Failed to send command:", error);
-            statusDiv.innerText = "Command send status: Failed to send";
-        }
-    } else {
-        statusDiv.innerText = "Command send status: Not connected to ESP32";
+    if (!bleCharacteristic) {
+        sendStatus.innerText = "Command send status: ESP32 not connected.";
+        console.warn("ESP32 not connected yet.");
+        return;
+    }
+
+    try {
+        const encoder = new TextEncoder();
+        await bleCharacteristic.writeValue(encoder.encode(command));
+        console.log("Sent to ESP32:", command);
+        sendStatus.innerText = `Command send status: "${command}" sent successfully.`;
+    } catch (err) {
+        console.error("Failed to send command:", err);
+        sendStatus.innerText = "Command send status: Failed to send.";
     }
 }
 
@@ -51,23 +53,19 @@ async function createModel() {
     const checkpointURL = URL + "model.json";
     const metadataURL = URL + "metadata.json";
 
-    recognizer = speechCommands.create(
-        "BROWSER_FFT",
-        undefined,
-        checkpointURL,
-        metadataURL
-    );
-
+    recognizer = speechCommands.create("BROWSER_FFT", undefined, checkpointURL, metadataURL);
     await recognizer.ensureModelLoaded();
     return recognizer;
 }
 
 async function init() {
-    document.getElementById("status").innerText = "Loading model...";
+    const modelStatus = document.getElementById("status");
+    const commandStatus = document.getElementById("current-command");
+
+    modelStatus.innerText = "Loading model...";
     const recognizer = await createModel();
     const classLabels = recognizer.wordLabels();
-
-    document.getElementById("status").innerText = "Listening...";
+    modelStatus.innerText = "Listening...";
 
     recognizer.listen(async result => {
         const scores = result.scores;
@@ -83,7 +81,7 @@ async function init() {
 
         if (predictedClass !== lastPrediction && maxScore > 0.75) {
             lastPrediction = predictedClass;
-            document.getElementById("current-command").innerText = predictedClass;
+            commandStatus.innerText = predictedClass;
             await sendCommandToESP32(predictedClass);
         }
 
